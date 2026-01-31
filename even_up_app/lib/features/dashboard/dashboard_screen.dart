@@ -1,0 +1,174 @@
+import 'package:flutter/cupertino.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'package:even_up_app/core/config.dart';
+import 'package:even_up_app/core/models/group.dart';
+import 'package:even_up_app/features/expenses/add_expense_screen.dart';
+import 'package:even_up_app/features/groups/create_group_screen.dart';
+import 'package:even_up_app/features/groups/group_detail_screen.dart';
+
+class DashboardScreen extends StatefulWidget {
+  const DashboardScreen({super.key});
+
+  @override
+  State<DashboardScreen> createState() => _DashboardScreenState();
+}
+
+class _DashboardScreenState extends State<DashboardScreen> {
+  late Future<List<Group>> _groupsFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _groupsFuture = _fetchGroups();
+  }
+
+  Future<List<Group>> _fetchGroups() async {
+    final response = await http.get(Uri.parse('${AppConfig.baseUrl}/groups'));
+
+    if (response.statusCode == 200) {
+      final List<dynamic> data = jsonDecode(response.body);
+      return data.map((json) => Group.fromJson(json)).toList();
+    } else {
+      throw Exception('Failed to load groups');
+    }
+  }
+
+  void _refreshGroups() {
+    setState(() {
+      _groupsFuture = _fetchGroups();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return CupertinoPageScaffold(
+      navigationBar: CupertinoNavigationBar(
+        middle: const Text('Groups'),
+        leading: CupertinoButton(
+          padding: EdgeInsets.zero,
+          child: const Icon(CupertinoIcons.add_circled),
+          onPressed: () async {
+            final result = await Navigator.of(context).push(
+              CupertinoPageRoute(builder: (context) => CreateGroupScreen()),
+            );
+            if (result == true) {
+              _refreshGroups();
+            }
+          },
+        ),
+      ),
+      child: SafeArea(
+        child: FutureBuilder<List<Group>>(
+          future: _groupsFuture,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CupertinoActivityIndicator());
+            } else if (snapshot.hasError) {
+              return Center(child: Text('Error: ${snapshot.error}'));
+            } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+              return _buildEmptyState();
+            }
+
+            final groups = snapshot.data!;
+            return ListView(
+              children: [
+                _buildHeader(),
+                CupertinoListSection.insetGrouped(
+                  header: const Text('Your Groups'),
+                  children: groups.map((group) => CupertinoListTile(
+                    leading: Icon(
+                      _getGroupIcon(group.icon),
+                      color: _getGroupIconColor(group.icon),
+                    ),
+                    title: Text(group.name),
+                    subtitle: const Text('No expenses yet'),
+                    trailing: const CupertinoListTileChevron(),
+                    onTap: () {
+                      Navigator.of(context).push(
+                        CupertinoPageRoute(
+                          builder: (context) => GroupDetailScreen(
+                            key: UniqueKey(),
+                            group: group,
+                          ),
+                        ),
+                      );
+                    },
+                  )).toList(),
+                ),
+              ],
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHeader() {
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Overall Balance',
+            style: CupertinoTheme.of(context).textTheme.navTitleTextStyle.copyWith(fontSize: 24),
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'You are all settled up',
+            style: TextStyle(color: CupertinoColors.secondaryLabel),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return ListView(
+      children: [
+        _buildHeader(),
+        Center(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 64.0),
+            child: Column(
+              children: [
+                const Icon(CupertinoIcons.group, size: 64, color: CupertinoColors.systemGrey3),
+                const SizedBox(height: 16),
+                const Text('No groups yet', style: TextStyle(color: CupertinoColors.secondaryLabel)),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  IconData _getGroupIcon(String? icon) {
+    switch (icon) {
+      case 'home':
+        return CupertinoIcons.house_fill;
+      case 'trip':
+        return CupertinoIcons.airplane;
+      case 'coffee':
+        return CupertinoIcons.cart_fill;
+      case 'group':
+      default:
+        return CupertinoIcons.person_3_fill;
+    }
+  }
+
+  Color _getGroupIconColor(String? icon) {
+    switch (icon) {
+      case 'home':
+        return CupertinoColors.systemGreen;
+      case 'trip':
+        return CupertinoColors.systemBlue;
+      case 'coffee':
+        return CupertinoColors.systemBrown;
+      case 'group':
+      default:
+        return CupertinoColors.systemOrange;
+    }
+  }
+}
