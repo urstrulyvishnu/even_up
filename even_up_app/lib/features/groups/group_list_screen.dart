@@ -23,7 +23,7 @@ class GroupListScreen extends StatelessWidget {
               header: const Text('Your Groups'),
               children: [
                 CupertinoListTile(
-                  leading: const Icon(CupertinoIcons.group_fill, color: CupertinoColors.systemOrange),
+                  leading: const Icon(CupertinoIcons.group, color: CupertinoColors.systemOrange),
                   title: const Text('Trip to Paris'),
                   subtitle: const Text('You are owed \$120.00'),
                   trailing: const CupertinoListTileChevron(),

@@ -23,7 +23,6 @@ class ExpenseDetailScreen extends StatefulWidget {
 
 class _ExpenseDetailScreenState extends State<ExpenseDetailScreen> {
   List<GroupMember>? _members;
-  bool _isLoading = false;
 
   @override
   void initState() {
@@ -52,7 +51,6 @@ class _ExpenseDetailScreenState extends State<ExpenseDetailScreen> {
       return;
     }
     
-    setState(() => _isLoading = true);
     try {
       final url = '${AppConfig.baseUrl}/groups/${widget.expense.groupId}';
       debugPrint('ExpenseDetailScreen: Fetching members from $url');
@@ -71,8 +69,6 @@ class _ExpenseDetailScreenState extends State<ExpenseDetailScreen> {
       }
     } catch (e) {
       debugPrint('ExpenseDetailScreen: Error fetching group members: $e');
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
     }
   }
 

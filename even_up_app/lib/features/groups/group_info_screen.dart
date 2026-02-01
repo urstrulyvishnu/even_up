@@ -37,7 +37,7 @@ class GroupInfoScreen extends StatelessWidget {
           width: 100,
           height: 100,
           decoration: BoxDecoration(
-            color: _getGroupIconColor(group.icon).withOpacity(0.2),
+            color: _getGroupIconColor(group.icon).withValues(alpha: 0.2),
             shape: BoxShape.circle,
           ),
           child: Icon(

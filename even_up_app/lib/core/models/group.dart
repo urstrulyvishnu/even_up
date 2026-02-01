@@ -19,16 +19,29 @@ class Group {
 
   factory Group.fromJson(Map<String, dynamic> json) {
     return Group(
-      id: json['id'] ?? '',
-      name: json['name'] ?? 'Unnamed Group',
-      createdBy: json['createdBy'] ?? '',
+      id: _safeString(json['id']),
+      name: _safeString(json['name'] ?? json['displayName'], defaultValue: 'Unnamed Group'),
+      createdBy: _safeString(json['createdBy']),
       createdAt: json['createdAt'] != null 
-          ? DateTime.parse(json['createdAt']) 
+          ? DateTime.tryParse(json['createdAt'].toString()) ?? DateTime.now()
           : DateTime.now(),
       members: json['members'] != null
           ? (json['members'] as List).map((m) => GroupMember.fromJson(m)).toList()
           : null,
-      icon: json['icon'],
+      icon: _safeString(json['icon'], defaultValue: 'group'),
     );
+  }
+
+  static String _safeString(dynamic value, {String defaultValue = ''}) {
+    if (value is String) return value;
+    if (value == null) return defaultValue;
+    try {
+      // Use string interpolation as it's generally safer in DDC
+      final String s = '$value';
+      if (s == 'undefined' || s == 'null') return defaultValue;
+      return s;
+    } catch (_) {
+      return defaultValue;
+    }
   }
 }

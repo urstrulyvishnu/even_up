@@ -1,4 +1,5 @@
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:even_up_app/core/config.dart';
@@ -7,7 +8,8 @@ import 'package:even_up_app/core/active_state.dart';
 
 class AddExpenseScreen extends StatefulWidget {
   final String? groupId;
-  const AddExpenseScreen({super.key, this.groupId});
+  final CupertinoTabController? tabController;
+  const AddExpenseScreen({super.key, this.groupId, this.tabController});
 
   @override
   State<AddExpenseScreen> createState() => _AddExpenseScreenState();
@@ -67,7 +69,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
     setState(() {
       if (activeId != null) {
         _selectedGroupId = activeId;
-      } else if (_selectedGroupId == null && (_availableGroups ?? []).isNotEmpty) {
+      } else if (_selectedGroupId == null && _availableGroups.isNotEmpty) {
         _selectedGroupId = _availableGroups.first.id;
       }
       _reorderGroups();
@@ -84,7 +86,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
   }
 
   void _updateSelectedMembers() {
-    if (_selectedGroupId == null || _availableGroups == null || _availableGroups.isEmpty) {
+    if (_selectedGroupId == null || _availableGroups.isEmpty) {
       _selectedMemberIds = {};
       return;
     }
@@ -95,7 +97,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
         orElse: () => _availableGroups.first,
       );
 
-      if (group != null && group.members != null) {
+      if (group.members != null) {
         _selectedMemberIds = group.members!.map((m) => m.id).toSet();
         _syncExactAmountControllers();
       } else {
@@ -184,7 +186,22 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
 
       if (response.statusCode == 201) {
         if (!mounted) return;
-        Navigator.pop(context, true);
+        
+        if (widget.groupId != null) {
+          // If we have a groupId, we were likely pushed from a detail screen
+          Navigator.of(context).pop(true);
+        } else {
+          // If no groupId, we are likely in the "Add" tab. 
+          // Reset form and switch to first tab after this build frame.
+          _resetState();
+          if (widget.tabController != null) {
+            SchedulerBinding.instance.addPostFrameCallback((_) {
+              if (mounted) {
+                widget.tabController!.index = 0; // Switch back to 'Groups'
+              }
+            });
+          }
+        }
       } else {
         throw Exception('Failed to save expense: ${response.statusCode}');
       }
@@ -208,6 +225,17 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
     }
   }
 
+  void _resetState() {
+    setState(() {
+      _descriptionController.clear();
+      _amountController.clear();
+      _splitType = 'Equally';
+      _selectedMemberIds = {};
+      _exactAmountControllers.clear();
+      _updateSelectedMembers();
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return CupertinoPageScaffold(
@@ -217,8 +245,8 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
             ? const CupertinoActivityIndicator()
             : CupertinoButton(
                 padding: EdgeInsets.zero,
-                child: const Text('Save'),
                 onPressed: _saveExpense,
+                child: const Text('Save'),
               ),
       ),
       child: SafeArea(
@@ -288,21 +316,23 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
           child: CupertinoSearchTextField(
-            onChanged: (value) => setState(() => _searchQuery = value),
             placeholder: 'Search groups...',
+            onChanged: (value) => setState(() => _searchQuery = value),
           ),
         ),
         SizedBox(
           height: 100, // Increased height for safety
           child: Builder(
             builder: (context) {
-              final List<Group> allGroups = _availableGroups ?? [];
-              final String q = (_searchQuery ?? '').toLowerCase();
+              final List<Group> allGroups = _availableGroups;
+              final String query = ((_searchQuery as dynamic) is String ? _searchQuery : '').toLowerCase();
               
               final List<Group> filteredGroups = allGroups.where((g) {
-                if (g == null) return false;
-                final String name = (g.name ?? '').toLowerCase();
-                return name.contains(q);
+                final dynamic rawName = g.name;
+                if (rawName is String) {
+                  return rawName.toLowerCase().contains(query);
+                }
+                return 'unnamed'.contains(query);
               }).toList();
 
               if (filteredGroups.isEmpty) {
@@ -339,7 +369,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                             decoration: BoxDecoration(
                               color: isSelected 
                                 ? _getGroupIconColor(group.icon)
-                                : _getGroupIconColor(group.icon).withOpacity(0.1),
+                                : _getGroupIconColor(group.icon).withValues(alpha: 0.1),
                               shape: BoxShape.circle,
                               border: isSelected 
                                 ? Border.all(color: _getGroupIconColor(group.icon), width: 3)
@@ -353,7 +383,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            group.name ?? 'Unnamed',
+                            group.name,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             textAlign: TextAlign.center,
@@ -377,9 +407,9 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
   }
 
   Widget _buildMemberSelector() {
-    final Group? currentGroup = (_availableGroups ?? []).cast<Group?>().firstWhere(
+    final Group? currentGroup = _availableGroups.cast<Group?>().firstWhere(
       (g) => g?.id == _selectedGroupId, 
-      orElse: () => (_availableGroups ?? []).isNotEmpty ? _availableGroups.first : null
+      orElse: () => _availableGroups.isNotEmpty ? _availableGroups.first : null
     );
 
     if (currentGroup == null) return const SizedBox.shrink();
@@ -390,11 +420,13 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
       );
     }
 
-    final query = (_memberSearchQuery ?? '').toString().toLowerCase();
+    final String query = ((_memberSearchQuery as dynamic) is String ? _memberSearchQuery : '').toLowerCase();
     final filteredMembers = currentGroup.members!.where((m) {
-      if (m == null) return false;
-      final name = (m.name ?? '').toLowerCase();
-      return name.contains(query);
+      final dynamic rawMemberName = m.name;
+      if (rawMemberName is String) {
+        return rawMemberName.toLowerCase().contains(query);
+      }
+      return 'unknown'.contains(query);
     }).toList();
 
     return Column(
@@ -414,8 +446,8 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
           child: CupertinoSearchTextField(
-            onChanged: (value) => setState(() => _memberSearchQuery = value),
             placeholder: 'Search members...',
+            onChanged: (value) => setState(() => _memberSearchQuery = value),
           ),
         ),
         SizedBox(
@@ -457,7 +489,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                         ),
                         child: Center(
                           child: Text(
-                            (member.name ?? '?').isNotEmpty ? member.name[0].toUpperCase() : '?',
+                            member.name.isNotEmpty ? member.name[0].toUpperCase() : '?',
                             style: TextStyle(
                               color: isSelected ? CupertinoColors.white : CupertinoColors.secondaryLabel,
                               fontWeight: FontWeight.bold,
@@ -468,7 +500,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                       ),
                       const SizedBox(height: 6),
                       Text(
-                        member.name ?? 'Unnamed',
+                        member.name,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         textAlign: TextAlign.center,

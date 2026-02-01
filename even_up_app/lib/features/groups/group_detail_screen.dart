@@ -3,9 +3,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:even_up_app/core/config.dart';
 import 'package:even_up_app/core/models/group.dart';
-import 'package:even_up_app/core/models/group_member.dart';
 import 'package:even_up_app/core/models/expense.dart';
-import 'package:even_up_app/features/expenses/add_expense_screen.dart';
 import 'package:even_up_app/features/expenses/expense_detail_screen.dart';
 import 'package:even_up_app/features/groups/add_member_screen.dart';
 import 'package:even_up_app/features/groups/group_info_screen.dart';
@@ -80,25 +78,6 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
     setState(() {
       _loadData();
     });
-  }
-
-  void _showMembersModal(BuildContext context, List<GroupMember> members) {
-    showCupertinoModalPopup(
-      context: context,
-      builder: (context) => CupertinoActionSheet(
-        title: const Text('Group Members'),
-        message: Text('${members.length} members'),
-        actions: members.map((member) => CupertinoActionSheetAction(
-          onPressed: () => Navigator.pop(context),
-          child: Text(member.name),
-        )).toList(),
-        cancelButton: CupertinoActionSheetAction(
-          onPressed: () => Navigator.pop(context),
-          isDestructiveAction: true,
-          child: const Text('Close'),
-        ),
-      ),
-    );
   }
 
   @override

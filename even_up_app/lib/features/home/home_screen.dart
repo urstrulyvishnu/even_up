@@ -15,12 +15,25 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   final CupertinoTabController _tabController = CupertinoTabController();
   final List<GlobalKey<NavigatorState>> _navigatorKeys = [
-    GlobalKey<NavigatorState>(),
-    GlobalKey<NavigatorState>(),
-    GlobalKey<NavigatorState>(),
-    GlobalKey<NavigatorState>(),
-    GlobalKey<NavigatorState>(),
+    GlobalKey<NavigatorState>(debugLabel: 'Navigator Groups'),
+    GlobalKey<NavigatorState>(debugLabel: 'Navigator Friends'),
+    GlobalKey<NavigatorState>(debugLabel: 'Navigator Add'),
+    GlobalKey<NavigatorState>(debugLabel: 'Navigator Activity'),
+    GlobalKey<NavigatorState>(debugLabel: 'Navigator Account'),
   ];
+  late final List<Widget> _screens;
+
+  @override
+  void initState() {
+    super.initState();
+    _screens = [
+      const DashboardScreen(),
+      const FriendsScreen(),
+      AddExpenseScreen(tabController: _tabController),
+      const ActivityScreen(),
+      const AccountScreen(),
+    ];
+  }
 
   @override
   void dispose() {
@@ -65,29 +78,10 @@ class _HomeScreenState extends State<HomeScreen> {
         ],
       ),
       tabBuilder: (context, index) {
-        Widget screen;
-        switch (index) {
-          case 0:
-            screen = const DashboardScreen();
-            break;
-          case 1:
-            screen = const FriendsScreen();
-            break;
-          case 2:
-            screen = const AddExpenseScreen();
-            break;
-          case 3:
-            screen = const ActivityScreen();
-            break;
-          case 4:
-            screen = const AccountScreen();
-            break;
-          default:
-            screen = const DashboardScreen();
-        }
         return CupertinoTabView(
+          key: ValueKey('TabView_$index'),
           navigatorKey: _navigatorKeys[index],
-          builder: (context) => screen,
+          builder: (context) => _screens[index],
         );
       },
     );

@@ -3,7 +3,6 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:even_up_app/core/config.dart';
 import 'package:even_up_app/core/models/group.dart';
-import 'package:even_up_app/features/expenses/add_expense_screen.dart';
 import 'package:even_up_app/features/groups/create_group_screen.dart';
 import 'package:even_up_app/features/groups/group_detail_screen.dart';
 
@@ -16,6 +15,7 @@ class DashboardScreen extends StatefulWidget {
 
 class _DashboardScreenState extends State<DashboardScreen> {
   late Future<List<Group>> _groupsFuture;
+  String _searchQuery = ''; // Defensive initialization
 
   @override
   void initState() {
@@ -70,31 +70,70 @@ class _DashboardScreenState extends State<DashboardScreen> {
               return _buildEmptyState();
             }
 
-            final groups = snapshot.data!;
+            final List<Group> groups = snapshot.data ?? [];
+            List<Group> filteredGroups = groups;
+            
+            try {
+              final String query = ((_searchQuery as dynamic) is String ? _searchQuery : '').toLowerCase();
+              if (query.isNotEmpty) {
+                filteredGroups = groups.where((g) {
+                  if ((g as dynamic) == null) return false;
+                  // Total lockdown: avoid .toString() if property might be undefined
+                  final dynamic rawName = g.name;
+                  if (rawName is String) {
+                    return rawName.toLowerCase().contains(query);
+                  }
+                  return 'unnamed'.contains(query);
+                }).toList();
+              }
+            } catch (e) {
+              debugPrint('Error filtering groups (Dashboard): $e');
+              filteredGroups = groups;
+            }
+
             return ListView(
               children: [
                 _buildHeader(),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                  child: CupertinoSearchTextField(
+                    placeholder: 'Search groups...',
+                    onChanged: (value) {
+                      setState(() {
+                        _searchQuery = value;
+                      });
+                    },
+                  ),
+                ),
                 CupertinoListSection.insetGrouped(
                   header: const Text('Your Groups'),
-                  children: groups.map((group) => CupertinoListTile(
-                    leading: Icon(
-                      _getGroupIcon(group.icon),
-                      color: _getGroupIconColor(group.icon),
-                    ),
-                    title: Text(group.name),
-                    subtitle: const Text('No expenses yet'),
-                    trailing: const CupertinoListTileChevron(),
-                    onTap: () {
-                      Navigator.of(context).push(
-                        CupertinoPageRoute(
-                          builder: (context) => GroupDetailScreen(
-                            key: UniqueKey(),
-                            group: group,
-                          ),
-                        ),
-                      );
-                    },
-                  )).toList(),
+                  children: filteredGroups.isEmpty 
+                    ? [const Padding(padding: EdgeInsets.all(16.0), child: Text('No matching groups found', textAlign: TextAlign.center, style: TextStyle(color: CupertinoColors.secondaryLabel)))]
+                    : filteredGroups.map((group) {
+                        try {
+                          return CupertinoListTile(
+                            leading: Icon(
+                              _getGroupIcon(group.icon),
+                              color: _getGroupIconColor(group.icon),
+                            ),
+                            title: Text((group.name as dynamic) is String ? group.name : 'Unnamed'),
+                            subtitle: const Text('No expenses yet'),
+                            trailing: const CupertinoListTileChevron(),
+                            onTap: () {
+                              Navigator.of(context).push(
+                                CupertinoPageRoute(
+                                  builder: (context) => GroupDetailScreen(
+                                    key: UniqueKey(),
+                                    group: group,
+                                  ),
+                                ),
+                              );
+                            },
+                          );
+                        } catch (e) {
+                          return const SizedBox.shrink();
+                        }
+                      }).toList(),
                 ),
               ],
             );
