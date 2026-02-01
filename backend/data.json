@@ -1,0 +1,121 @@
+{
+  "items": [
+    {
+      "PK": "GROUP#1769941307889",
+      "SK": "METADATA",
+      "name": "Banglore days",
+      "icon": "group",
+      "createdBy": "local-user-123",
+      "createdAt": "2026-02-01T10:21:47.889Z"
+    },
+    {
+      "PK": "GROUP#1769941307889",
+      "SK": "MEMBERS#local-user-123",
+      "joinedAt": "2026-02-01T10:21:47.890Z"
+    },
+    {
+      "PK": "GROUP#1769941307889",
+      "SK": "MEMBERS#friend-2",
+      "joinedAt": "2026-02-01T10:22:13.053Z"
+    },
+    {
+      "PK": "GROUP#1769941307889",
+      "SK": "MEMBERS#friend-3",
+      "joinedAt": "2026-02-01T10:22:13.053Z"
+    },
+    {
+      "PK": "GROUP#1769941307889",
+      "SK": "EXPENSE#1769941380993",
+      "description": "iuo",
+      "amount": 890,
+      "splitType": "Exact",
+      "splitWith": [
+        {
+          "userId": "local-user-123",
+          "amount": 89
+        },
+        {
+          "userId": "friend-3",
+          "amount": 90
+        }
+      ],
+      "paidBy": "local-user-123",
+      "createdAt": "2026-02-01T10:23:00.993Z"
+    },
+    {
+      "PK": "GROUP#1769941307889",
+      "SK": "EXPENSE#1769946817934",
+      "description": "ii",
+      "amount": 98,
+      "splitType": "Exact",
+      "splitWith": [
+        {
+          "userId": "local-user-123",
+          "amount": 9809
+        },
+        {
+          "userId": "friend-2",
+          "amount": 98.098
+        }
+      ],
+      "paidBy": "local-user-123",
+      "createdAt": "2026-02-01T11:53:37.934Z"
+    },
+    {
+      "PK": "GROUP#1769946856514",
+      "SK": "METADATA",
+      "name": "abc",
+      "icon": "group",
+      "createdBy": "local-user-123",
+      "createdAt": "2026-02-01T11:54:16.514Z"
+    },
+    {
+      "PK": "GROUP#1769946856514",
+      "SK": "MEMBERS#local-user-123",
+      "joinedAt": "2026-02-01T11:54:16.514Z"
+    },
+    {
+      "PK": "GROUP#1769946856514",
+      "SK": "MEMBERS#friend-1",
+      "joinedAt": "2026-02-01T11:54:16.514Z"
+    },
+    {
+      "PK": "GROUP#1769946856514",
+      "SK": "MEMBERS#friend-2",
+      "joinedAt": "2026-02-01T11:54:16.514Z"
+    },
+    {
+      "PK": "GROUP#1769947087612",
+      "SK": "METADATA",
+      "name": "iu",
+      "icon": "group",
+      "createdBy": "local-user-123",
+      "createdAt": "2026-02-01T11:58:07.612Z"
+    },
+    {
+      "PK": "GROUP#1769947087612",
+      "SK": "MEMBERS#local-user-123",
+      "joinedAt": "2026-02-01T11:58:07.612Z"
+    },
+    {
+      "PK": "GROUP#1769947087612",
+      "SK": "MEMBERS#friend-2",
+      "joinedAt": "2026-02-01T11:58:07.612Z"
+    },
+    {
+      "PK": "GROUP#1769947087612",
+      "SK": "MEMBERS#friend-1",
+      "joinedAt": "2026-02-01T11:58:07.612Z"
+    },
+    {
+      "PK": "GROUP#1769941307889",
+      "SK": "MEMBERS#friend-1",
+      "joinedAt": "2026-02-01T12:02:26.613Z"
+    },
+    {
+      "PK": "GROUP#1769941307889",
+      "SK": "MEMBERS#friend-4",
+      "joinedAt": "2026-02-01T12:02:26.613Z"
+    }
+  ]
+}
